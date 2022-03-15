@@ -1,5 +1,5 @@
 ---
-title: "Workshop3 - RMarkdown"
+title: "Workshop3 - RMarkdown and Workshop4 - Data Wrangling"
 author: "Cathy Liu"
 date: '2022-03-01'
 output: html_document
@@ -11,7 +11,44 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
+
+
 ### Data wrangling
+
+```{r}
+survey<-read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-05-18/survey.csv")
+
+
+
+country<-Survey%>%
+  distinct(country)
+
+survey%>%count(country,sort = TRUE)
+
+survey%>%
+  filter(
+    country=="United States" |
+      country=="USA" | 
+      country=="US" | 
+      country=="U.S." | 
+      country=="United States of America" |
+      country=="Usa"
+    )
+
+
+survey_short%>%filter(
+  annual_salary>50000 &
+    gender=="Woman"
+)
+
+
+survey%>%
+  select(how_old_are_you, industry, annual_salary, gender)%>%
+  filter(gender=="Woman")%>%
+  count(industry)
+```
+
+
 
 ```{r}
 
@@ -22,5 +59,215 @@ data<-read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/ma
 data%>%head()
 
 ```
+Arranging observations
+
+```{r}
+
+survey_short%>% 
+  head()%>%
+  select(timestamp,how_old_are_you,industry,annual_salary)
+  
+knitr::kable(survey_short[1:10,1:5])
+
+survey_short%>%top_n(n=10)
+
+survey_short%>%arrange(desc(annual_salary))%>%
+  select(industry,annual_salary)
+survey_short%>%count(industry, sort=TRUE)
+
+
+```
+
+Groupping and new variables
+
+```{r}
+survey_short%>%
+  mutate(total_salary=annual_salary+other_monetary_comp)%>%
+  select(industry, total_salary,annual_salary,other_monetary_comp)
+
+
+survey_short%>%
+  mutate(average_salary=mean(annual_salary,na.rm=TRUE))%>%
+  select(industry, average_salary)%>%
+  arrange(desc(average_salary))%>%
+  ungroup()
+
+```
+
+#add a new variable max_salary which is maximum salary per industry
+
+```{r}
+survey_short%>%
+  group_by(industry,gender)%>%
+  mutate(average_salary=mean(annual_salary,na.rm=TRUE))%>%
+  select(industry,gender,average_salary)%>%
+  arrange(desc(average_salary))%>%
+  ungroup()
+
+```
+
+```{r}
+survey_short%>%
+  group_by(gender,industry)%>%
+  mutate(average_salary=mean(annual_salary,na.rm=TRUE))%>%
+  select(industry,gender,average_salary)%>%
+  arrange(desc(average_salary))%>%
+  ungroup()
+
+```
+summarising data
+
+
+
+```{r}
+#group by industry and gender use summarise for average_salary
+  
+#group by gender and industry and use summarise for average_salary
+#group by industry and gender use summarise for average_salary and max_salary
+
+survey_short%>%
+  group_by(industry,gender)%>%
+  summarise(
+    average_salary=mean(annual_salary, na.rm=TRUE)
+)
+
+survey_short%>%
+  group_by(gender, industry)%>%
+  summarise(
+    average_salary=mean(annual_salary, na.rm=TRUE)
+)
+
+
+survey_short%>%
+  group_by(industry, gender)%>%
+  summarise(
+    average_salary=mean(annual_salary, na.rm=TRUE),
+    max_salary=max(annual_salary)
+  )
+```
+Case_when
+
+```{r}
+survey_short_veryshort<-survey_short%>%
+  select(industry,gender,annual_salary)
+
+# if annual_salary is more than 700000 than your annual_salary is high, otherwise it is low
+
+survey_short_veryshort%>%
+  mutate(
+         annual_salary_level=case_when(
+           annual_salary>700000 ~ "high",
+           T ~ "low"
+         )  
+    
+  )%>%
+  arrange(desc(annual_salary))
+
+# if annual_salary is more than 700000 than your annual_salary is high
+# otherwise if annual_salary is more than 70000, but less equal to 700000 then your annual_salary is middle
+# otherwishe it is low
+  
+
+survey_short_veryshort%>%
+  mutate(
+         annual_salary_level=case_when(
+           annual_salary>700000 ~ "high",
+           annual_salary>70000 & 
+           annual_salary<=700000 ~ "middle",
+           T ~ "low"
+         )  
+    
+  )%>%
+  arrange(desc(annual_salary))
+
+#creat a vriable highly_paid_women
+#if gender=="woman" and annual_salary>50000 then high, otherwise it is low
+
+survey_short_veryshort%>%
+  mutate(
+         highly_paid_women=case_when(
+           annual_salary>50000 & gender=="Woman" ~ "high",
+           T ~ "low"
+         ) 
+    
+  ) %>% 
+  filter(gender=="Woman") %>% 
+arrange(desc(annual_salary))
+
+
+
+```
+
+```{r}
+
+#library(tidyverse)
+
+data(mpg)
+
+mpg %>% ggplot(
+  aes(displ, hwy,colour=class)
+  )+
+  geom_point()
+  data(mpg)
+
+mpg %>% ggplot(
+  aes(displ, hwy,colour=trans)
+  )+
+
+geom_point()
+
+mpg %>% ggplot(
+  aes(displ, hwy,colour=manufacturer)
+  )+
+
+geom_point()
+
+
+
+```
+```{r}
+mpg %>% ggplot(
+  aes(displ, hwy,colour=class,size=trans,shape=manufacturer)
+  )+
+
+geom_point()
+```
+```{r}
+mpg %>% ggplot(
+  aes(class, year)
+  )+
+geom_col()
+
+mpg %>% ggplot(
+  aes(hwy, year)
+  )+
+geom_smooth()
+
+```
+```{r}
+summary(survey)
+install.packages("skimr")
+library(skimr)
+
+```
+```{r}
+library(skimr)
+skim(survey)
+```
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
 
 
